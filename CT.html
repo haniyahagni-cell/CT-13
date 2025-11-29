@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tiling 2xN — CLEAN VERSION</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    label {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+
+    input {
+      padding: 5px 8px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 6px 12px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #005fcc;
+    }
+
+    .board {
+      display: inline-block;
+      margin: 12px;
+      padding: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .cell {
+      width: 30px;
+      height: 30px;
+      margin: 1px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Tiling 2 × N menggunakan keramik 2×1</h2>
+
+  <label>Masukkan n:
+    <input id="n" type="number" min="1" value="5">
+  </label>
+
+  <button onclick="generate()">Generate</button>
+
+  <p id="count"></p>
+  <div id="result"></div>
+
+<script>
+function generate() {
+  const N = Number(document.getElementById('n').value);
+
+  if (N > 12) {
+    document.getElementById('count').innerText =
+      'N terlalu besar untuk enumerasi. Maksimum 12.';
+    return;
+  }
+
+  const grid = Array.from({ length: 2 }, () => Array(N).fill(false));
+  let solutions = [];
+
+  function findEmpty() {
+    for (let c = 0; c < N; c++)
+      for (let r = 0; r < 2; r++)
+        if (!grid[r][c]) return [r, c];
+    return null;
+  }
+
+  function place(cells, val) {
+    cells.forEach(([r, c]) => (grid[r][c] = val));
+  }
+
+  function backtrack(list) {
+    const e = findEmpty();
+    if (!e) {
+      solutions.push(JSON.parse(JSON.stringify(list)));
+      return;
+    }
+
+    let [r, c] = e;
+
+    // vertical tile
+    if (!grid[0][c] && !grid[1][c]) {
+      place([[0, c], [1, c]], true);
+      list.push({ o: 'V', cells: [[0, c], [1, c]] });
+      backtrack(list);
+      list.pop();
+      place([[0, c], [1, c]], false);
+    }
+
+    // horizontal tile
+    if (c + 1 < N && !grid[r][c + 1]) {
+      place([[r, c], [r, c + 1]], true);
+      list.push({ o: 'H', cells: [[r, c], [r, c + 1]] });
+      backtrack(list);
+      list.pop();
+      place([[r, c], [r, c + 1]], false);
+    }
+  }
+
+  backtrack([]);
+
+  document.getElementById('count').innerText =
+    'Jumlah kombinasi: ' + solutions.length;
+
+  const result = document.getElementById('result');
+  result.innerHTML = '';
+
+  solutions.forEach((sol, idx) => {
+    const idMap = Array.from({ length: 2 }, () => Array(N).fill(-1));
+
+    sol.forEach((t, i) =>
+      t.cells.forEach(([r, c]) => (idMap[r][c] = i))
+    );
+
+    const board = document.createElement('div');
+    board.className = 'board';
+    board.innerHTML = `<b>#${idx + 1}</b>`;
+
+    for (let r = 0; r < 2; r++) {
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      for (let c = 0; c < N; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+
+        const id = idMap[r][c];
+        cell.style.background =
+          id >= 0 ? `hsl(${(id * 40) % 360},70%,60%)` : '#ddd';
+
+        row.appendChild(cell);
+      }
+
+      board.appendChild(row);
+    }
+
+    result.appendChild(board);
+  });
+}
+</script>
+</body>
+</html>
